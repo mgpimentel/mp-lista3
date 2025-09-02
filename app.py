@@ -278,20 +278,20 @@ if rodar:
 st.divider()
 st.subheader("Enviar este exercício")
 
-ident = st.text_input("Identificador (RA/USP ou e-mail)", "")
-res = st.session_state["results"].get(ex)
-disabled = res is None or not ident.strip()
+# ident = st.text_input("Identificador (RA/USP ou e-mail)", "")
+# res = st.session_state["results"].get(ex)
+# disabled = res is None or not ident.strip()
 
-if st.button("Gerar formulário pré-preenchido", disabled=disabled):
-    if not res:
-        st.warning("Rode a avaliação antes de enviar.")
-    elif not ident.strip():
-        st.warning("Preencha o identificador.")
-    else:
-        ok, tot = res
-        code_sent = st.session_state["codes"][ex]
-        url = prefilled_form_url(ident.strip(), LISTA_ID, ex.upper(), ok, tot, code_sent)
-        st.link_button("Abrir Google Form pré-preenchido", url)
-        st.session_state["submitted"][ex] = True
+# if st.button("Gerar formulário pré-preenchido", disabled=disabled):
+#     if not res:
+#         st.warning("Rode a avaliação antes de enviar.")
+#     elif not ident.strip():
+#         st.warning("Preencha o identificador.")
+#     else:
+#         ok, tot = res
+#         code_sent = st.session_state["codes"][ex]
+#         url = prefilled_form_url(ident.strip(), LISTA_ID, ex.upper(), ok, tot, code_sent)
+#         st.link_button("Abrir Google Form pré-preenchido", url)
+#         st.session_state["submitted"][ex] = True
 
-st.caption("As entradas e saídas dos testes não são exibidas. O formulário registra seu código, placar e uma assinatura para verificação.")
+# st.caption("As entradas e saídas dos testes não são exibidas. O formulário registra seu código, placar e uma assinatura para verificação.")
