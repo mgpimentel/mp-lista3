@@ -1,6 +1,5 @@
-
 import streamlit as st
-import io, sys, hashlib, textwrap, builtins, requests, re, json, pathlib, urllib.parse, hmac
+import io, sys, hashlib, builtins, requests, re, json, pathlib, urllib.parse, hmac
 
 # =========================
 # Configurações do app
@@ -8,28 +7,27 @@ import io, sys, hashlib, textwrap, builtins, requests, re, json, pathlib, urllib
 st.set_page_config(page_title="Lista 3 — Meninas Programadoras", page_icon="🧪", layout="centered")
 
 # Onde estão os testes (JSON) no GitHub (pode ser repo público ou privado com raw access)
-# No diretório, mantenha arquivos ex1.json ... ex12.json (ou c1.json ... c12.json).
 GITHUB_RAW_BASE = st.secrets.get("GITHUB_RAW_BASE", "https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t")
 
-# Chave secreta para assinar o envio (configure em Settings → Secrets do Streamlit Cloud)
+# Chave secreta para assinar o envio
 SECRET_KEY = st.secrets.get("SECRET_KEY", "troque-por-uma-chave-secreta")
 
 # Google Form (viewform) e os IDs dos campos (entry.xxxxx)
 FORM_URL = st.secrets.get("FORM_URL", "https://docs.google.com/forms/d/e/SEU_FORM_ID/viewform")
 ENTRY_ID = st.secrets.get("ENTRY_ID", {
-    "ident": "entry.1111111111",  # RA/Email
-    "lista": "entry.2222222222",  # Lista (ex.: LISTA3)
-    "ex":    "entry.3333333333",  # EX1..EX12
-    "ok":    "entry.4444444444",  # passou
-    "tot":   "entry.5555555555",  # total
-    "code":  "entry.6666666666",  # código
-    "sig":   "entry.7777777777",  # assinatura HMAC
+    "ident": "entry.1111111111",
+    "lista": "entry.2222222222",
+    "ex":    "entry.3333333333",
+    "ok":    "entry.4444444444",
+    "tot":   "entry.5555555555",
+    "code":  "entry.6666666666",
+    "sig":   "entry.7777777777",
 })
 
 LISTA_ID = "LISTA3"
 
 # =========================
-# Enunciados (versão final)
+# Enunciados
 # =========================
 ENUNCIADOS = {
     "ex1": """**EX1 — Resultado da soma de dois números inteiros**
@@ -111,7 +109,7 @@ Saída:
 ```""",
     "ex7": """**EX7 — Igualdade salarial (pares H, M)**
 Leia **pares** de salários `H` (homem) e `M` (mulher) — dois números float em **linhas separadas** para a mesma posição. O último par contém `-1` e `-1` e **não conta**. Informe **em quantos pares** `M == H`.
-**Exemplo (ilustrativo)**
+**Exemplo**
 Entrada:
 ```
 1000.0
@@ -128,7 +126,7 @@ Saída:
     "ex8": """**EX8 — Comparação salarial (pares H, M)**
 Mesmo formato do EX7. Informe, considerando apenas os pares válidos, **três números**: 
 `mesmo` `mais` `menos` — respectivamente, em quantos pares `M == H`, `M > H` e `M < H`.
-**Exemplo (ilustrativo)**
+**Exemplo**
 Entrada:
 ```
 1000.0
@@ -187,7 +185,7 @@ Saída:
 2
 ```""",
     "ex12": """**EX12 — Contagem de gênero**
-Dada uma sequência de linhas **terminadas com `.`**, cada linha com `M` ou `F` (gênero masculino/feminino), informe **quantas ocorrências** de cada gênero foram registradas, no formato `M F`.
+Dada uma sequência de linhas **terminadas com `.`**, cada linha com `M` ou `F`, informe **quantas ocorrências** de cada gênero foram registradas, no formato `M F`.
 **Exemplo**
 Entrada:
 ```
@@ -208,24 +206,19 @@ Saída:
 TEMPLATES = { ex: f"#EXERCICIO: {ex}\n# escreva seu código aqui\n" for ex in ENUNCIADOS.keys() }
 
 # =========================
-# Execução segura do código
+# Execução segura
 # =========================
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.strip().encode("utf-8")).hexdigest()
 
 def run_user_code(code: str, input_text: str):
-    """
-    Executa o código do aluno(a) com input() simulado.
-    Retorna (status, value): status 'ok' -> stdout; 'exc' -> mensagem de erro curta.
-    """
-    lines = input_text.splitlines(True)  # preserva \n
+    lines = input_text.splitlines(True)
     it = iter(lines)
     def fake_input(prompt=""):
         try:
             return next(it).rstrip("\n")
         except StopIteration:
             raise EOFError("faltou entrada para input()")
-
     old_stdin, old_stdout = sys.stdin, sys.stdout
     old_input = builtins.input
     sys.stdin = io.StringIO(input_text)
@@ -241,19 +234,10 @@ def run_user_code(code: str, input_text: str):
         builtins.input = old_input
 
 # =========================
-# Carregar testes do GitHub
+# Carregar testes
 # =========================
 @st.cache_data(show_spinner=False, ttl=600)
 def load_tests_from_github(tag: str):
-    """
-    Aceita 'ex1' ou '1' etc. Baixa ex{n}.json; se 404, tenta c{n}.json.
-    Formato esperado:
-    {
-      "cases": [ {"entrada": "...", "saida_hash": "..."}, ... ],
-      "hash_alg": "sha256",
-      "normalizacao": "strip"
-    }
-    """
     m = re.search(r'(\d+)', str(tag))
     n = str(int(m.group(1))) if m else str(tag)
     urls = [
@@ -267,9 +251,6 @@ def load_tests_from_github(tag: str):
             r.raise_for_status()
             data = r.json()
             cases = data.get("cases", data if isinstance(data, list) else [])
-            if not isinstance(cases, list):
-                raise ValueError("Formato de testes inválido: 'cases' deve ser lista.")
-            # normalização default
             return {
                 "cases": cases,
                 "hash_alg": data.get("hash_alg", "sha256"),
@@ -280,7 +261,7 @@ def load_tests_from_github(tag: str):
     raise last_err or RuntimeError("Não foi possível carregar os testes.")
 
 # =========================
-# Assinatura de envio
+# Assinatura HMAC
 # =========================
 def sign_submission(ident: str, lista: str, ex: str, ok: int, tot: int, code: str) -> str:
     payload = f"{ident}|{lista}|{ex}|{ok}|{tot}|{_sha256(code)}"
@@ -303,7 +284,6 @@ def prefilled_form_url(ident: str, lista: str, ex: str, ok: int, tot: int, code:
 # UI
 # =========================
 st.title("Lista 3 — Correção Automática (MP)")
-
 st.markdown("Selecione o exercício, escreva seu código, rode os testes e **envie sua resposta** pelo formulário.")
 
 ex_list = [f"ex{i}" for i in range(1,13)]
@@ -335,7 +315,7 @@ if st.session_state.get("_run"):
             saida_hash = caso.get("saida_hash", "")
             status, out = run_user_code(code, entrada)
             if status == "exc":
-                st.error(f"Teste {i}: **ERRO de execução** — {out}")
+                st.error(f"Teste {i}: **ERRO** — {out}")
             else:
                 h = _sha256(out)
                 if h == saida_hash:
