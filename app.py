@@ -147,7 +147,7 @@ st.caption(f"Progresso médio: {avg:.1f}% nos exercícios avaliados")
 # =========================
 # UI principal
 # =========================
-st.title("Lista 3 — Correção Automática (MP)")
+st.title("Lista 3 — Pré-correção Automática (MP)")
 st.markdown("Selecione o exercício, escreva seu código e rode os testes.")
 
 ex_list = [f"ex{i}" for i in range(1,13)]
