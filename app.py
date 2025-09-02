@@ -59,9 +59,6 @@ ENUNCIADOS = {
     "ex12": "*EX12 — A professora propôs um exercício para discutir como podemos representar informações simples, como o gênero de uma pessoa, em programas de computador. Cada linha da entrada contém uma letra:* \n- *F para feminino,* \n- *M para masculino.* \n\n *A leitura termina quando for digitado apenas um ponto final (`.`)* \n\n*O programa deve contar quantas pessoas de cada gênero foram registradas e imprimir o total de M e F, nesta ordem.*\n\n*Exemplo*\n\nVocê digita:\n```\nM\nF\nF\nM\n.\n```\nO programa imprime:\n```\n2\n2\n```",
 }
 
-# Templates sem quebras extras no fim
-TEMPLATES = { ex: f"#EXERCICIO: {ex}\n# escreva seu código aqui" for ex in ENUNCIADOS.keys() }
-
 # =========================
 # Funções de apoio
 # =========================
@@ -69,7 +66,6 @@ def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 def _normalize(s: str, mode: str = "strip") -> str:
-    # Normaliza quebras de linha e espaços finais/iniciais conforme solicitado no bundle
     s = s.replace("\r\n", "\n").replace("\r", "\n")
     if mode == "strip":
         return s.strip()
@@ -77,10 +73,9 @@ def _normalize(s: str, mode: str = "strip") -> str:
         return s.rstrip()
     if mode == "lstrip":
         return s.lstrip()
-    return s  # padrão: sem alteração adicional
+    return s
 
 def run_user_code(code: str, input_text: str):
-    # Isola input/print do usuário
     lines = input_text.splitlines(True)
     it = iter(lines)
     def fake_input(prompt=""):
@@ -123,7 +118,6 @@ def load_tests_from_github(tag: str):
             r = requests.get(url, timeout=20, headers=headers or None)
             r.raise_for_status()
             data = r.json()
-            # Suporta formatos: {"cases":[...], "hash_alg":"sha256", "normalizacao":"strip"} ou lista simples
             cases = data.get("cases", data if isinstance(data, list) else [])
             return {
                 "cases": cases,
@@ -158,7 +152,7 @@ def prefilled_form_url(ident: str, lista: str, ex: str, ok: int, tot: int, code:
 # Memória por exercício + resultados + submissão
 # =========================
 if "codes" not in st.session_state:
-    st.session_state["codes"] = {ex: TEMPLATES[ex] for ex in ENUNCIADOS.keys()}
+    st.session_state["codes"] = {f"ex{i}": "" for i in range(1, 13)}
 if "results" not in st.session_state:
     st.session_state["results"] = {}  # ex -> (ok, total)
 if "submitted" not in st.session_state:
@@ -203,24 +197,42 @@ ex = st.selectbox("Exercício", ex_list, format_func=lambda k: k.upper())
 
 st.markdown(ENUNCIADOS[ex])
 
-# Mostra o modelo com highlight (não editável)
-st.markdown(f"""```python\n{TEMPLATES[ex]}\n```""")
+# =========================
+# Editor com syntax highlight (Ace) — fallback para text_area
+# =========================
+try:
+    from streamlit_ace import st_ace
 
-# Editor com memória por exercício (em branco inicialmente)
-current_code = st.session_state["codes"].get(ex, "")
-code = st.text_area(
-    "Seu código (use input() e print())",
-    value=current_code,
-    height=260,
-    key=f"code_{ex}",
-    placeholder=TEMPLATES[ex],
-)
-st.session_state["codes"][ex] = st.session_state[f"code_{ex}"]
+    current_code = st.session_state["codes"].get(ex, "")
 
-# Pré-visualização formatada do código (com highlight)
-st.markdown("**Pré-visualização do seu código:**")
-preview_code = st.session_state["codes"][ex] if st.session_state["codes"][ex].strip() else TEMPLATES[ex]
-st.code(preview_code, language="python")
+    code = st_ace(
+        value=current_code or "",
+        language="python",
+        theme="github",
+        keybinding="vscode",
+        font_size=14,
+        tab_size=4,
+        wrap=True,
+        show_gutter=True,
+        show_print_margin=False,
+        auto_update=True,
+        placeholder="# Escreva seu código aqui (use input() e print())",
+        height=320,
+        key=f"ace_{ex}",
+    )
+
+    st.session_state["codes"][ex] = code or ""
+
+except Exception:
+    current_code = st.session_state["codes"].get(ex, "")
+    code = st.text_area(
+        "Seu código (use input() e print())",
+        value=current_code,
+        height=260,
+        key=f"code_{ex}",
+        placeholder="# Escreva seu código aqui (use input() e print())",
+    )
+    st.session_state["codes"][ex] = st.session_state[f"code_{ex}"]
 
 col1, col2 = st.columns([1,1])
 with col1:
