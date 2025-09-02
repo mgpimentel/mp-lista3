@@ -190,7 +190,7 @@ render_dashboard(dash)
 # =========================
 # UI principal
 # =========================
-st.title("Lista 3 — Correção Automática (MP)")
+st.title("Lista 3 — Pré-correção Automática (MPM.PPM.T2)")
 st.markdown("Selecione o exercício, escreva seu código e rode os testes.")
 
 ex_list = [f"ex{i}" for i in range(1,13)]
