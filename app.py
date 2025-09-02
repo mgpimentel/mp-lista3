@@ -208,7 +208,7 @@ except Exception:
     ACE_OK = False
 
 if ACE_OK:
-    st.caption("Editor: Ace (colorido) ✓")
+    #st.caption("Editor: Ace (colorido) ✓") 
     current_code = st.session_state["codes"].get(ex, "")
     code = st_ace(
         value=current_code or "",
