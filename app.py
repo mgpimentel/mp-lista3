@@ -200,15 +200,20 @@ st.markdown(ENUNCIADOS[ex])
 # =========================
 # Editor com syntax highlight (Ace) — fallback para text_area
 # =========================
+ACE_OK = False
 try:
     from streamlit_ace import st_ace
+    ACE_OK = True
+except Exception:
+    ACE_OK = False
 
+if ACE_OK:
+    st.caption("Editor: Ace (colorido) ✓")
     current_code = st.session_state["codes"].get(ex, "")
-
     code = st_ace(
         value=current_code or "",
         language="python",
-        theme="github",
+        theme="monokai",           # tema com contraste forte
         keybinding="vscode",
         font_size=14,
         tab_size=4,
@@ -217,13 +222,12 @@ try:
         show_print_margin=False,
         auto_update=True,
         placeholder="# Escreva seu código aqui (use input() e print())",
-        height=320,
+        height=340,
         key=f"ace_{ex}",
     )
-
     st.session_state["codes"][ex] = code or ""
-
-except Exception:
+else:
+    st.caption("Editor: simples (sem highlight) — instale 'streamlit-ace' no requirements.txt para cor")
     current_code = st.session_state["codes"].get(ex, "")
     code = st.text_area(
         "Seu código (use input() e print())",
