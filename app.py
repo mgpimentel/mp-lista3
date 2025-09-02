@@ -275,8 +275,8 @@ if rodar:
         except Exception as e:
             st.error(f"Falha ao carregar/rodar testes: {e}")
 
-st.divider()
-st.subheader("Enviar este exercício")
+# st.divider()
+# st.subheader("Enviar este exercício")
 
 # ident = st.text_input("Identificador (RA/USP ou e-mail)", "")
 # res = st.session_state["results"].get(ex)
