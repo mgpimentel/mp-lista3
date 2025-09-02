@@ -1,5 +1,5 @@
 import streamlit as st
-import io, sys, hashlib, builtins, requests, re
+import io, sys, hashlib, builtins, requests, re, json, urllib.parse, hmac
 
 # =========================
 # Configurações do app
@@ -9,13 +9,37 @@ st.set_page_config(page_title="Lista 3 — Meninas Programadoras", layout="cente
 # -------------------------
 # Segredos (defina no secrets.toml ou nas Secrets do Streamlit Cloud)
 # -------------------------
-# Exemplo:
+# Exemplos de secrets:
 # GITHUB_RAW_BASE="https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t"
+# SECRET_KEY="troque-por-uma-chave-secreta-bem-grande"
+# FORM_URL="https://docs.google.com/forms/d/e/SEU_FORM_ID/viewform"
+# [ENTRY_ID]
+# ident="entry.1111111111"
+# lista="entry.2222222222"
+# ex="entry.3333333333"
+# ok="entry.4444444444"
+# tot="entry.5555555555"
+# code="entry.6666666666"
+# sig="entry.7777777777"
+#
 # (Opcional) Para acessar repositório privado via raw.githubusercontent, forneça:
 # GITHUB_TOKEN="ghp_..."  (token com escopo apenas de leitura)
 
 GITHUB_RAW_BASE = st.secrets.get("GITHUB_RAW_BASE", "https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t")
+SECRET_KEY = st.secrets.get("SECRET_KEY", "troque-por-uma-chave-secreta")
+FORM_URL = st.secrets.get("FORM_URL", "https://docs.google.com/forms/d/e/SEU_FORM_ID/viewform")
+ENTRY_ID = st.secrets.get("ENTRY_ID", {
+    "ident": "entry.1111111111",
+    "lista": "entry.2222222222",
+    "ex":    "entry.3333333333",
+    "ok":    "entry.4444444444",
+    "tot":   "entry.5555555555",
+    "code":  "entry.6666666666",
+    "sig":   "entry.7777777777",
+})
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+
+LISTA_ID = "Lista 3"
 
 # =========================
 # Enunciados (versão MPM)
@@ -74,7 +98,7 @@ def run_user_code(code: str, input_text: str):
         builtins.input = old_input
 
 # =========================
-# Carregar testes (JSON)
+# Carregar testes
 # =========================
 @st.cache_data(show_spinner=False, ttl=600)
 def load_tests_from_github(tag: str):
@@ -105,15 +129,37 @@ def load_tests_from_github(tag: str):
     raise last_err or RuntimeError("Não foi possível carregar os testes.")
 
 # =========================
-# Memória por exercício + resultados
+# Assinatura HMAC
+# =========================
+def sign_submission(ident: str, lista: str, ex: str, ok: int, tot: int, code: str) -> str:
+    payload = f"{ident}|{lista}|{ex}|{ok}|{tot}|{_sha256(code.strip())}"
+    return hmac.new(SECRET_KEY.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+
+def prefilled_form_url(ident: str, lista: str, ex: str, ok: int, tot: int, code: str) -> str:
+    sig = sign_submission(ident, lista, ex, ok, tot, code)
+    params = {
+        ENTRY_ID["ident"]: ident,
+        ENTRY_ID["lista"]: lista,
+        ENTRY_ID["ex"]:    ex,
+        ENTRY_ID["ok"]:    str(ok),
+        ENTRY_ID["tot"]:   str(tot),
+        ENTRY_ID["code"]:  code,
+        ENTRY_ID["sig"]:   sig,
+    }
+    return f"{FORM_URL}?usp=pp_url&{urllib.parse.urlencode(params)}"
+
+# =========================
+# Memória por exercício + resultados + submissão
 # =========================
 if "codes" not in st.session_state:
     st.session_state["codes"] = {f"ex{i}": "" for i in range(1, 13)}
 if "results" not in st.session_state:
     st.session_state["results"] = {}  # ex -> (ok, total)
+if "submitted" not in st.session_state:
+    st.session_state["submitted"] = {}  # ex -> True/False
 
 # =========================
-# Painel de Progresso (sem coluna de formulário)
+# Painel de Progresso
 # =========================
 st.subheader("📊 Seu progresso na Lista 3")
 import pandas as _pd
@@ -124,14 +170,16 @@ for i in range(1, 13):
     ok, tot = (res if res else (0, 0))
     perc = (ok / tot * 100) if tot else 0.0
     status = "— não avaliado —" if tot == 0 else ("✅ completo" if ok == tot else "🟡 parcial")
+    submitted = "✅" if st.session_state["submitted"].get(k) else "—"
     rows.append({
         "Exercício": k.upper(),
         "Acertos": f"{ok}/{tot}" if tot else "",
         "%": round(perc, 1) if tot else "",
         "Status": status,
+        "Formulário": submitted,
     })
 df = _pd.DataFrame(rows)
-df = df[["Exercício", "Acertos", "%", "Status"]]
+df = df[["Exercício", "Acertos", "%", "Status", "Formulário"]]
 st.dataframe(df, hide_index=True, use_container_width=True)
 valid = [r for r in rows if r["%"] != ""]
 avg = sum(r["%"] for r in valid)/len(valid) if valid else 0.0
@@ -142,7 +190,7 @@ st.caption(f"Progresso médio: {avg:.1f}% nos exercícios avaliados")
 # UI principal
 # =========================
 st.title("Lista 3 — Correção Automática (MP)")
-st.markdown("Selecione o exercício, escreva seu código e rode os testes.")
+st.markdown("Selecione o exercício, escreva seu código, rode os testes e *envie sua resposta* pelo formulário.")
 
 ex_list = [f"ex{i}" for i in range(1,13)]
 ex = st.selectbox("Exercício", ex_list, format_func=lambda k: k.upper())
@@ -160,11 +208,12 @@ except Exception:
     ACE_OK = False
 
 if ACE_OK:
+    st.caption("Editor: Ace (colorido) ✓")
     current_code = st.session_state["codes"].get(ex, "")
     code = st_ace(
         value=current_code or "",
         language="python",
-        theme="chrome",
+        theme="github",           # tema com contraste forte
         keybinding="vscode",
         font_size=14,
         tab_size=4,
@@ -178,6 +227,7 @@ if ACE_OK:
     )
     st.session_state["codes"][ex] = code or ""
 else:
+    st.caption("Editor: simples (sem highlight) — instale 'streamlit-ace' no requirements.txt para cor")
     current_code = st.session_state["codes"].get(ex, "")
     code = st.text_area(
         "Seu código (use input() e print())",
@@ -196,7 +246,6 @@ with col2:
 
 if reset:
     st.session_state["results"].pop(ex, None)
-    st.rerun()
 
 if rodar:
     with st.spinner("Carregando casos e executando testes..."):
@@ -223,8 +272,26 @@ if rodar:
                         st.warning(f"Teste {i}: ERRO")
             st.info(f"*Resumo {ex.upper()}: {ok}/{total} OK*")
             st.session_state["results"][ex] = (ok, total)
-            st.rerun()
         except Exception as e:
             st.error(f"Falha ao carregar/rodar testes: {e}")
 
-st.caption("As entradas e saídas dos testes não são exibidas. Este app apenas avalia localmente via casos de teste públicos.")
+st.divider()
+st.subheader("Enviar este exercício")
+
+ident = st.text_input("Identificador (RA/USP ou e-mail)", "")
+res = st.session_state["results"].get(ex)
+disabled = res is None or not ident.strip()
+
+if st.button("Gerar formulário pré-preenchido", disabled=disabled):
+    if not res:
+        st.warning("Rode a avaliação antes de enviar.")
+    elif not ident.strip():
+        st.warning("Preencha o identificador.")
+    else:
+        ok, tot = res
+        code_sent = st.session_state["codes"][ex]
+        url = prefilled_form_url(ident.strip(), LISTA_ID, ex.upper(), ok, tot, code_sent)
+        st.link_button("Abrir Google Form pré-preenchido", url)
+        st.session_state["submitted"][ex] = True
+
+st.caption("As entradas e saídas dos testes não são exibidas. O formulário registra seu código, placar e uma assinatura para verificação.")
