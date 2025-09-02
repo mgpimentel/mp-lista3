@@ -14,8 +14,14 @@ st.set_page_config(page_title="Lista 3 — Meninas Programadoras", layout="cente
 # (Opcional) Para acessar repositório privado via raw.githubusercontent, forneça:
 # GITHUB_TOKEN="ghp_..."  (token com escopo apenas de leitura)
 
-GITHUB_RAW_BASE = st.secrets.get("GITHUB_RAW_BASE", "https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t")
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+# --- Lendo partes dos Secrets e montando a URL base dos testes ---
+owner = st.secrets.get("GITHUB_OWNER", "mgpimentel")
+repo = st.secrets.get("GITHUB_REPO", "xyzist3st3s")
+tests_branch = st.secrets.get("GITHUB_TESTS_BRANCH", "main")  # onde estão os JSONs
+tests_dir = st.secrets.get("GITHUB_TESTS_DIR", "t")           # pasta dos JSONs
+
+GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{owner}/{repo}/{tests_branch}/{tests_dir}"
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", None)  # opcional (repo privado)
 
 # =========================
 # Enunciados (versão MPM)
