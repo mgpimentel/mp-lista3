@@ -152,16 +152,28 @@ def render_dashboard(target_placeholder):
         k = f"ex{i}"
         res = st.session_state["results"].get(k)
         ok, tot = (res if res else (0, 0))
-        perc = (ok / tot * 100) if tot else 0.0
-        status = "— não avaliado —" if tot == 0 else ("✅ completo" if ok == tot else "🟡 parcial")
+
+        # --- NOVA LÓGICA DE STATUS ---
+        if tot == 0:
+            status = "— não avaliado —"
+        elif ok == 0:
+            status = "🔴 0 acertos"
+        elif ok == tot:
+            status = "✅ completo"
+        else:
+            status = "🟡 parcial"
+        # ------------------------------
+
         submitted = "✅" if st.session_state["submitted"].get(k) else "—"
         rows.append({
             "Exercício": k.upper(),
             "Acertos": f"{ok}/{tot}" if tot else "",
-            "%": round(perc, 1) if tot else "",
+            "%": round((ok/tot)*100, 1) if tot else "",
             "Status": status,
-            "Formulário": submitted,
+            "Formulário": submitted,  # pode remover se não usa mais
         })
+
+    import pandas as _pd
     df = _pd.DataFrame(rows)[["Exercício", "Acertos", "%", "Status", "Formulário"]]
     with target_placeholder.container():
         st.subheader("📊 Seu progresso na Lista 3")
@@ -170,6 +182,7 @@ def render_dashboard(target_placeholder):
         avg = sum(r["%"] for r in valid)/len(valid) if valid else 0.0
         st.progress(min(1.0, avg/100))
         st.caption(f"Progresso médio: {avg:.1f}% nos exercícios avaliados")
+
 
 dash = st.empty()
 render_dashboard(dash)
