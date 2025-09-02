@@ -45,193 +45,21 @@ LISTA_ID = "Lista 3"
 # Enunciados
 # =========================
 ENUNCIADOS = {
-    "ex1": """*EX1 — Resultado da soma de dois números inteiros*
-Leia dois inteiros (um por linha) e imprima a soma.
-*Exemplo*
-Você digita:
-```
-3
-4
-```
-O programa imprime:
-```
-7
-```""",
-    "ex2": """*EX2 — Pode comprar*
-Dados dois inteiros (saldo e valor do item), imprima `pode comprar` se saldo ≥ valor, senão `não pode comprar`.
-*Exemplo*
-Você digita:
-```
-100
-50
-```
-O programa imprime:
-```
-pode comprar
-```""",
-    "ex3": """*EX3 — Vogal maiúscula*
-Dada uma letra, verificar se é uma *vogal maiúscula*. Imprima `vogal` ou `não vogal`.
-*Exemplo*
-Você digita:
-```
-A
-```
-O programa imprime:
-```
-vogal
-```""",
-    "ex4": """*EX4 — Ler até atingir alvo*
-Dado um valor inteiro *alvo*, leia inteiros (um por linha) até que a *soma* dos valores lidos *atinja ou ultrapasse* o alvo. Não imprimir nada durante as leituras; ao final, imprimir a soma obtida.
-*Exemplo*
-Você digita:
-```
-10
-3
-4
-5
-```
-O programa imprime:
-```
-12
-```""",
-    "ex5": """*EX5 — Contar positivos até negativo*
-Leia inteiros até que apareça um *valor negativo*. Informe *quantos valores positivos* foram lidos (não contar o negativo).
-*Exemplo*
-Você digita:
-```
-1
-2
-0
--1
-```
-O programa imprime:
-```
-3
-```""",
-    "ex6": """*EX6 — Ler nomes até o alvo*
-Dado um *nome‑alvo* na primeira linha, leia nomes (um por linha) até que um nome *igual ao alvo* seja dado. Informe *quantos nomes* foram lidos *antes* do alvo.
-*Exemplo*
-Você digita:
-```
-sol
-consola
-luar
-solado
-soldada
-mulher
-resolução
-professora
-insolente
-menina
-sol
-```
-O programa imprime:
-```
-9
-```""",
-    "ex7": """*EX7 — Igualdade salarial (pares H, M)*
-Leia *pares* de salários `H` (homem) e `M` (mulher) — dois números float em *linhas separadas* para a mesma posição. O último par contém `-1` e `-1` e *não conta*. Informe *em quantos pares* `M == H`.
-*Exemplo*
-Você digita:
-```
-1000.0
-1000.0
-2000.0
-2500.0
--1
--1
-```
-O programa imprime:
-```
-1
-```""",
-    "ex8": """*EX8 — Comparação salarial (pares H, M)*
-Mesmo formato do EX7. Informe, considerando apenas os pares válidos, *três números*: 
-`mesmo` `mais` `menos` — respectivamente, em quantos pares `M == H`, `M > H` e `M < H`.
-*Exemplo*
-Você digita:
-```
-1000.0
-1000.0
-2000.0
-2500.0
--1
--1
-```
-O programa imprime:
-```
-1 1 0
-```""",
-    "ex9": """*EX9 — Saldo do caixa*
-Dados valores de *entrada* (positivos) e *saída* (negativos) de um caixa de banco, informe o *saldo final*. A entrada termina com valor *0* (não conta).
-*Exemplo*
-Você digita:
-```
-100
--30
--20
-0
-```
-O programa imprime:
-```
-50
-```""",
-    "ex10": """*EX10 — Calorias do dia*
-Dados valores de *consumo de calorias* por alimentos (positivos) e *gasto de energia* (negativos), informe `consumidas gastas saldo` ao final do dia. A entrada termina com `0`.
-*Exemplo*
-Você digita:
-```
-300
--100
-250
--50
-0
-```
-O programa imprime:
-```
-550 150 400
-```""",
-    "ex11": """*EX11 — Ocorrência de palavra‑alvo por linha*
-Dada uma *palavra‑alvo* (primeira linha) e um conjunto de linhas *terminado por uma linha contendo apenas um ponto final `.`*, informe *em quantas linhas* a palavra‑alvo ocorre (casamento simples, sensível a maiúsculas/minúsculas).
-*Exemplo*
-Você digita:
-```
-sol
-consola
-luar
-solado
-soldada
-mulher
-resolução
-professora
-insolente
-menina
-.
-```
-O programa imprime:
-```
-5
-```""",
-    "ex12": """*EX12 — Contagem de M e F*
-Dada uma sequência de linhas *terminadas com `.`*, cada linha com `M` ou `F`, informe *quantas ocorrências* de cada foram registradas, no formato `M F`.
-*Exemplo*
-Você digita:
-```
-M
-F
-F
-.
-```
-O programa imprime:
-```
-1 2
-```"""
+    "ex1": "*EX1 — Dados o número de execicios que uma aluna resolveu nas duas primeiras listas, calcule quantos exercícios ela resolveu no total.*\n\n*Exemplo*\n\nVocê digita:\n```\n7\n8\n```\nO programa imprime:\n```\n15\n```",
+    "ex2": "*EX2 — Você está ajudando a professora do Fundamental a ensinar para as crianças que não se deve gastar mais do que se tem. Ela pediu para você fazer um programa no qual as crianças digitam o valor do saldo e o valor de um item, e o programa imprime 'pode comprar' se o saldo for maior ou igual ao valor do item, e 'não pode comprar' caso contrário.*\n\n*Exemplo*\n\nVocê digita:\n```\n100\n80\n```\nO programa imprime:\n```\npode comprar\n```",
+    "ex3": "*EX3 — A professora do Fundamental ficou sabendo que você aprendeu a utilizar o operador `in` e logo pensou que você pode ajudar com um programa que, dada uma letra, verifica  se é uma das vogais. Ela disse que as crianças só sabem utilizar letras maíusculas e pediu para que seu programa responda 'vogal' ou 'não vogal'.*\n\n*Exemplo*\n\nVocê digita:\n```\nA\n```\nO programa imprime:\n```\nvogal\n```",
+    "ex4": "*EX4 — Nosso curso *Meninas Programadoras Multidisciplinar* tem número limitado de vagas. As candidatas são analisadas por ordem de prioridade: (1) alunas do Ensino Médio, (2) concluintes no ano anterior, (3) há dois anos, (4) há três anos, e assim por diante. Seu programa deve, dado o número de vagas total, ler o número de alunas selecionadas por atenderem os critérios de priorização, aceitando alunas até que o número de vagas se esgote. No final, o programa informa quantos critérios foram utilizados na seleção da turma.*\n\n*Exemplo*\n\nVocê digita:\n```\n150\n50\n60\n30\n15\n```\nO programa imprime:\n```\n4\n```",
+    "ex5": "*EX5 — A professora do Fundamental está ensinando as crianças que existem números positivos, que existe o valor nulo, e que existem números negativos. Ela pediu sua ajuda para fazer um programa que recebe valores inteiros de entrada até que seja dado um valor negativo, e informa quantos valores positivos foram lidos.*\n\n*Exemplo*\n\nVocê digita:\n```\n1\n2\n0\n5\n-1\n```\nO programa imprime:\n```\n4\n```",
+    "ex6": "*EX6 — Dado um nome alvo em uma linha inicial, seu programa ler nomes em novas linhas até que um nome igual ao alvo seja dado, e informar quantos nomes foram lidos antes do alvo.*\n\n*Exemplo*\n\nVocê digita:\n```\nAna\nYasmin\nMaria\nAna\n```\nO programa imprime:\n```\n2\n```",
+    "ex7": "*EX7 — A professora está estudando a diferença salarial entre homens e mulheres em uma mesma função. Para isso, ela pediu sua ajuda para criar um programa que leia pares de salários, sendo sempre o salário do homem primeiro e o da mulher em seguida. A leitura termina quando o par -1 e -1 for informado. O programa deve contar quantos pares indicam igualdade salarial entre homem e mulher naquela posição, e imprimir esse total.*\n\n*Exemplo*\n\nVocê digita:\n```\n1000.00\n1000.00\n1200.00\n1100.00\n-1\n-1\n```\nO programa imprime:\n```\n1\n```",
+    "ex8": "*EX8 — A professora quer comparar salários de homens e mulheres que ocupam a mesma função. Ela pediu sua ajuda para criar um programa que leia pares de salários, sempre com o salário do homem primeiro e o da mulher em seguida. A leitura termina quando o par -1 e -1 for informado. O programa deve contar e informar: - Quantos pares têm salários iguais, - Quantos pares em que as mulheres recebem mais, e - Quantos pares em que as mulheres recebem menos que os homens.*\n\n*Exemplo*\n\nVocê digita:\n```\n1000.0\n1000.0\n1200.0\n1100.0\n900.0\n950.0\n-1\n-1\n```\nO programa imprime:\n```\n1\n1\n1\n```",
+    "ex9": "*EX9 — A professora está ajudando seus alunos a entender como funcionam operações de entrada e saída em um caixa de banco. Ela pediu sua ajuda para criar um programa que leia valores numéricos representando essas operações: - Valores positivos representam depósitos. - Valores negativos representam saques. - A leitura termina quando for digitado o valor 0. O programa deve calcular e imprimir o saldo final ao fim do dia.*\n\n*Exemplo*\n\nVocê digita:\n```\n100\n-20\n-30\n50\n0\n```\nO programa imprime:\n```\n100\n```",
+    "ex10": "*EX10 — A professora está trabalhando com seus alunos a ideia de balanço calórico. Ela pediu sua ajuda para criar um programa que leia valores numéricos representando: - Consumo de calorias (valores positivos, vindos de alimentos), - Gasto de energia (valores negativos, de atividades físicas ou metabolismo). - Término da entrada de dados para o programa indicado pelo valoe 0 (zero). O programa deve calcular e imprimir: - A quantidade total de calorias consumidas; - A quantidade total de calorias gastas; - O saldo calórico final do dia.*\n\n*Exemplo*\n\nVocê digita:\n```\n200\n300\n-150\n-50\n0\n```\nO programa imprime:\n```\n500\n200\n300\n```",
+    "ex11": "*EX11 — A professora propôs um jogo para as crianças: ela escolhe uma palavra-alvo e uma criança vai digitando outras palavras, uma por linha. - Cada vez que a palavra-alvo aparecer na linha digitada, a criança ganha um ponto! - O jogo termina quando a criança digita apenas um ponto final (`.`) Seu programa deve contar quantos pontos uma criança obteve em uma jogada.*\n\n*Exemplo*\n\nVocê digita:\n```\nsol\nconsola\ninsolente\nluar\nsolado\nsoldada\nmulher\nresolução\nprofessora\nmenina\n.\n```\nO programa imprime:\n```\n5\n```",
+    "ex12": "*EX12 — A professora propôs um exercício para discutir como podemos representar informações simples, como o gênero de uma pessoa, em programas de computador. Cada linha da entrada contém uma letra: - F para feminino, - M para masculino. A leitura termina quando for digitado apenas um ponto final (`.`) O programa deve contar quantas pessoas de cada gênero foram registradas e imprimir o total de M e F, nesta ordem.*\n\n*Exemplo*\n\nVocê digita:\n```\nM\nF\nF\nM\n.\n```\nO programa imprime:\n```\n2\n2\n```",
 }
 
-# =========================
-# Templates (sem solução)
-# =========================
-TEMPLATES = { ex: f"#EXERCICIO: {ex}\\n# escreva seu código aqui\\n" for ex in ENUNCIADOS.keys() }
+TEMPLATES = { ex: f"#EXERCICIO: {ex}\n# escreva seu código aqui" for ex in ENUNCIADOS.keys() }
 
 # =========================
 # Funções de apoio
