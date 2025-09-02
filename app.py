@@ -278,32 +278,45 @@ def run_user_code(code: str, input_text: str):
 # =========================
 @st.cache_data(show_spinner=False, ttl=600)
 def load_tests_from_github(tag: str):
-    m = re.search(r'(\\d+)', str(tag))
-    n = str(int(m.group(1))) if m else str(tag)
+    import re, requests
+    tag_str = str(tag).strip()
+    m = re.search(r'(\d+)', tag_str)
+    if m:
+        n = m.group(1)              # pega só os dígitos
+    else:
+        only_digits = re.sub(r'\D+', '', tag_str)
+        if only_digits:
+            n = only_digits
+        else:
+            raise ValueError(f"Não foi possível extrair número do identificador '{tag_str}'")
+
     urls = [
         f"{GITHUB_RAW_BASE}/ex{n}.json",
         f"{GITHUB_RAW_BASE}/c{n}.json",
     ]
+
     headers = {}
     if GITHUB_TOKEN:
         headers["Authorization"] = f"token {GITHUB_TOKEN}"
         headers["Accept"] = "application/vnd.github.raw+json"
+
     last_err = None
     for url in urls:
         try:
             r = requests.get(url, timeout=20, headers=headers or None)
             r.raise_for_status()
             data = r.json()
-            # Suporta formatos: {"cases":[...], "hash_alg":"sha256", "normalizacao":"strip"} ou lista simples
             cases = data.get("cases", data if isinstance(data, list) else [])
             return {
                 "cases": cases,
                 "hash_alg": data.get("hash_alg", "sha256"),
-                "normalizacao": data.get("normalizacao", "strip")
+                "normalizacao": data.get("normalizacao", "strip"),
             }
         except Exception as e:
-            last_err = e
-    raise last_err or RuntimeError("Não foi possível carregar os testes.")
+            last_err = (url, e)
+
+    attempted = " | ".join(urls)
+    raise RuntimeError(f"Não foi possível carregar os testes. URLs tentadas: {attempted}. Último erro: {last_err[1]}")
 
 # =========================
 # Assinatura HMAC
