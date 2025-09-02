@@ -278,8 +278,8 @@ def run_user_code(code: str, input_text: str):
 # =========================
 @st.cache_data(show_spinner=False, ttl=600)
 def load_tests_from_github(tag: str):
-    m = re.search(r'(\\d+)', str(tag))
-    n = str(int(m.group(1))) if m else str(tag)
+    m = re.search(r'(\d+)', str(tag))
+    n = m.group(1) if m else str(tag)
     urls = [
         f"{GITHUB_RAW_BASE}/ex{n}.json",
         f"{GITHUB_RAW_BASE}/c{n}.json",
