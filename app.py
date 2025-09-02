@@ -1,33 +1,45 @@
+
 import streamlit as st
 import io, sys, hashlib, builtins, requests, re
 
 # =========================
 # Configurações do app
 # =========================
-st.set_page_config(page_title="Lista 3 — Meninas Programadoras", layout="centered")
+st.set_page_config(page_title="Lista 3 — Pré-correção automática (MP)", layout="centered")
+
+# --- Compactar layout / fontes ---
+st.markdown("""
+<style>
+.block-container {padding-top: 0.8rem; padding-bottom: 0.8rem;}
+h1 {font-size: 1.55rem; margin-bottom: 0.4rem;}
+h2, h3 {margin-top: .4rem; margin-bottom: .4rem;}
+[data-testid="stDataFrame"] div[role="grid"] {font-size: .92rem;}
+.stButton>button {padding: .35rem .75rem; font-size: .9rem;}
+.ace_editor {font-size: 13px; line-height: 1.35;}
+[data-testid="stElementToolbar"] {display: none !important;}
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------
 # Segredos (defina no secrets.toml ou nas Secrets do Streamlit Cloud)
 # -------------------------
-# Exemplo:
-# GITHUB_RAW_BASE="https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t"
-# (Opcional) Para acessar repositório privado via raw.githubusercontent, forneça:
-# GITHUB_TOKEN="ghp_..."  (token com escopo apenas de leitura)
+_owner = st.secrets.get("GITHUB_OWNER")
+_repo = st.secrets.get("GITHUB_REPO")
+_branch = st.secrets.get("GITHUB_TESTS_BRANCH")
+_dir = st.secrets.get("GITHUB_TESTS_DIR")
 
-# --- Lendo partes dos Secrets e montando a URL base dos testes ---
-owner = st.secrets.get("GITHUB_OWNER", "mgpimentel")
-repo = st.secrets.get("GITHUB_REPO", "xyzist3st3s")
-tests_branch = st.secrets.get("GITHUB_TESTS_BRANCH", "main")  # onde estão os JSONs
-tests_dir = st.secrets.get("GITHUB_TESTS_DIR", "t")           # pasta dos JSONs
+if _owner and _repo and _branch and _dir:
+    GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{_owner}/{_repo}/{_branch}/{_dir}"
+else:
+    GITHUB_RAW_BASE = st.secrets.get("GITHUB_RAW_BASE", "https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t")
 
-GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{owner}/{repo}/{tests_branch}/{tests_dir}"
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", None)  # opcional (repo privado)
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", None)  # opcional p/ repo privado
 
 # =========================
 # Enunciados (versão MPM)
 # =========================
 ENUNCIADOS = {
-"ex1": "*EX1 — Dados o número de execicios que uma aluna resolveu nas duas primeiras listas, calcule quantos exercícios ela resolveu no total.*\n\n*Exemplo*\n\nVocê digita:\n```\n7\n8\n```\nO programa imprime:\n```\n15\n```",
+    "ex1": "*EX1 — Dados o número de execicios que uma aluna resolveu nas duas primeiras listas, calcule quantos exercícios ela resolveu no total.*\n\n*Exemplo*\n\nVocê digita:\n```\n7\n8\n```\nO programa imprime:\n```\n15\n```",
     "ex2": "*EX2 — Você está ajudando a professora do Fundamental a ensinar para as crianças que não se deve gastar mais do que se tem. Ela pediu para você fazer um programa no qual as crianças digitam o valor do saldo e o valor de um item, e o programa imprime 'pode comprar' se o saldo for maior ou igual ao valor do item, e 'não pode comprar' caso contrário.*\n\n*Exemplo*\n\nVocê digita:\n```\n100\n80\n```\nO programa imprime:\n```\npode comprar\n```",
     "ex3": "*EX3 — A professora do Fundamental ficou sabendo que você aprendeu a utilizar o operador `in` e logo pensou que você pode ajudar com um programa que, dada uma letra, verifica  se é uma das vogais. Ela disse que as crianças só sabem utilizar letras maíusculas e pediu para que seu programa responda 'vogal' ou 'não vogal'.*\n\n*Exemplo*\n\nVocê digita:\n```\nA\n```\nO programa imprime:\n```\nvogal\n```",
     "ex4": "*EX4 — Nosso curso *Meninas Programadoras Multidisciplinar* tem número limitado de vagas. As candidatas são analisadas por ordem de prioridade: (1) alunas do Ensino Médio, (2) concluintes no ano anterior, (3) há dois anos, (4) há três anos, e assim por diante. Seu programa deve, dado o número de vagas total, ler o número de alunas selecionadas por atenderem os critérios de priorização, aceitando alunas até que o número de vagas se esgote. No final, o programa informa quantos critérios foram utilizados na seleção da turma.*\n\n*Exemplo*\n\nVocê digita:\n```\n150\n50\n60\n30\n15\n```\nO programa imprime:\n```\n4\n```",
@@ -111,126 +123,141 @@ def load_tests_from_github(tag: str):
     raise last_err or RuntimeError("Não foi possível carregar os testes.")
 
 # =========================
-# Memória por exercício + resultados
+# Memória e resultados
 # =========================
 if "codes" not in st.session_state:
     st.session_state["codes"] = {f"ex{i}": "" for i in range(1, 13)}
 if "results" not in st.session_state:
     st.session_state["results"] = {}  # ex -> (ok, total)
+if "last_run" not in st.session_state:
+    st.session_state["last_run"] = {}  # ex -> {"lines":[(lvl,msg)], "summary":(ok,tot)}
 
 # =========================
-# Painel de Progresso (sem coluna de formulário)
+# Painel de Progresso (compacto)
 # =========================
 st.subheader("📊 Seu progresso na Lista 3")
+
 import pandas as _pd
-rows = []
+_rows = []
 for i in range(1, 13):
     k = f"ex{i}"
     res = st.session_state["results"].get(k)
     ok, tot = (res if res else (0, 0))
-    perc = (ok / tot * 100) if tot else 0.0
-    status = "— não avaliado —" if tot == 0 else ("✅ completo" if ok == tot else "🟡 parcial")
-    rows.append({
-        "Exercício": k.upper(),
-        "Acertos": f"{ok}/{tot}" if tot else "",
-        "%": round(perc, 1) if tot else "",
-        "Status": status,
-    })
-df = _pd.DataFrame(rows)
-df = df[["Exercício", "Acertos", "%", "Status"]]
-st.dataframe(df, hide_index=True, use_container_width=True)
-valid = [r for r in rows if r["%"] != ""]
-avg = sum(r["%"] for r in valid)/len(valid) if valid else 0.0
-st.progress(min(1.0, avg/100))
-st.caption(f"Progresso médio: {avg:.1f}% nos exercícios avaliados")
+    perc = round(ok / tot * 100, 1) if tot else ""
+    status_icon = "✅" if tot and ok == tot else ("🟡" if tot else "—")
+    _rows.append({"Exercício": k.upper(), "Acertos": f"{ok}/{tot}" if tot else "", "%": perc, "Status": status_icon})
+df = _pd.DataFrame(_rows, columns=["Exercício", "Acertos", "%", "Status"])
+st.dataframe(df, hide_index=True, use_container_width=True, height=360)
+
+_done = [r for r in _rows if r["%"] != ""]
+_avg = sum(r["%"] for r in _done)/len(_done) if _done else 0.0
+st.progress(min(1.0, _avg/100))
+st.caption(f"Média dos exercícios avaliados: {_avg:.1f}%")
 
 # =========================
-# UI principal
+# UI principal (tabs)
 # =========================
-st.title("Lista 3 — Pré-correção Automática (MP)")
-st.markdown("Selecione o exercício, escreva seu código e rode os testes.")
+st.title("Lista 3 — Pré-correção automática (MP)")
+st.markdown("Selecione o exercício, escreva seu código e rode os testes para a **pré-correção**.")
 
 ex_list = [f"ex{i}" for i in range(1,13)]
 ex = st.selectbox("Exercício", ex_list, format_func=lambda k: k.upper())
 
-st.markdown(ENUNCIADOS[ex])
+tab_enun, tab_code = st.tabs(["📖 Enunciado", "💻 Código & testes"])
 
-# =========================
-# Editor com syntax highlight (Ace) — fallback para text_area
-# =========================
-ACE_OK = False
-try:
-    from streamlit_ace import st_ace
-    ACE_OK = True
-except Exception:
+with tab_enun:
+    st.markdown(ENUNCIADOS[ex])
+
+with tab_code:
     ACE_OK = False
+    try:
+        from streamlit_ace import st_ace
+        ACE_OK = True
+    except Exception:
+        ACE_OK = False
 
-if ACE_OK:
-    current_code = st.session_state["codes"].get(ex, "")
-    code = st_ace(
-        value=current_code or "",
-        language="python",
-        theme="chrome",
-        keybinding="vscode",
-        font_size=14,
-        tab_size=4,
-        wrap=True,
-        show_gutter=True,
-        show_print_margin=False,
-        auto_update=True,
-        placeholder="# Escreva seu código aqui (use input() e print())",
-        height=340,
-        key=f"ace_{ex}",
-    )
-    st.session_state["codes"][ex] = code or ""
-else:
-    current_code = st.session_state["codes"].get(ex, "")
-    code = st.text_area(
-        "Seu código (use input() e print())",
-        value=current_code,
-        height=260,
-        key=f"code_{ex}",
-        placeholder="# Escreva seu código aqui (use input() e print())",
-    )
-    st.session_state["codes"][ex] = st.session_state[f"code_{ex}"]
+    if ACE_OK:
+        current_code = st.session_state["codes"].get(ex, "")
+        code = st_ace(
+            value=current_code or "",
+            language="python",
+            theme="chrome",
+            keybinding="vscode",
+            font_size=13,
+            tab_size=4,
+            wrap=True,
+            show_gutter=True,
+            show_print_margin=False,
+            auto_update=True,
+            placeholder="# Escreva seu código aqui (use input() e print())",
+            height=260,
+            key=f"ace_{ex}",
+        )
+        st.session_state["codes"][ex] = code or ""
+    else:
+        current_code = st.session_state["codes"].get(ex, "")
+        code = st.text_area(
+            "Seu código (use input() e print())",
+            value=current_code,
+            height=220,
+            key=f"code_{ex}",
+            placeholder="# Escreva seu código aqui (use input() e print())",
+        )
+        st.session_state["codes"][ex] = st.session_state[f"code_{ex}"]
 
-col1, col2 = st.columns([1,1])
-with col1:
-    rodar = st.button("Rodar avaliação", type="primary")
-with col2:
-    reset = st.button("Limpar saída")
+    col1, col2 = st.columns([1,1])
+    with col1:
+        rodar = st.button("Rodar avaliação", type="primary")
+    with col2:
+        reset = st.button("Limpar saída")
 
-if reset:
-    st.session_state["results"].pop(ex, None)
-    st.rerun()
+    if reset:
+        st.session_state["results"].pop(ex, None)
+        st.session_state["last_run"].pop(ex, None)
+        st.rerun()
 
-if rodar:
-    with st.spinner("Carregando casos e executando testes..."):
-        try:
-            bundle = load_tests_from_github(ex)
-            casos = bundle["cases"]
-            ok = 0
-            total = len(casos)
-            code_to_run = st.session_state["codes"][ex]
-            for i, caso in enumerate(casos, start=1):
-                entrada = caso.get("entrada", "")
-                saida_hash = caso.get("saida_hash", "")
-                normalizacao = caso.get("normalizacao", bundle.get("normalizacao", "strip"))
-                status, out = run_user_code(code_to_run, entrada)
-                if status == "exc":
-                    st.error(f"Teste {i}: ERRO — {out}")
-                else:
-                    out_norm = _normalize(out, normalizacao)
-                    h = _sha256(out_norm)
-                    if h == saida_hash:
-                        ok += 1
-                        st.success(f"Teste {i}: OK")
+    if rodar:
+        with st.spinner("Carregando casos e executando testes..."):
+            try:
+                bundle = load_tests_from_github(ex)
+                casos = bundle["cases"]
+                ok = 0
+                total = len(casos)
+                code_to_run = st.session_state["codes"][ex]
+                _lines = []
+                for i, caso in enumerate(casos, start=1):
+                    entrada = caso.get("entrada", "")
+                    saida_hash = caso.get("saida_hash", "")
+                    normalizacao = caso.get("normalizacao", bundle.get("normalizacao", "strip"))
+                    status, out = run_user_code(code_to_run, entrada)
+                    if status == "exc":
+                        _lines.append(("err", f"Teste {i}: ERRO — {out}"))
                     else:
-                        st.warning(f"Teste {i}: ERRO")
-            st.info(f"*Resumo {ex.upper()}: {ok}/{total} OK*")
-            st.session_state["results"][ex] = (ok, total)
-            st.rerun()
-        except Exception as e:
-            st.error(f"Falha ao carregar/rodar testes: {e}")
+                        out_norm = _normalize(out, normalizacao)
+                        h = _sha256(out_norm)
+                        if h == saida_hash:
+                            ok += 1
+                            _lines.append(("ok", f"Teste {i}: OK"))
+                        else:
+                            _lines.append(("warn", f"Teste {i}: ERRO"))
+                st.session_state["last_run"][ex] = {"lines": _lines, "summary": (ok, total)}
+                st.session_state["results"][ex] = (ok, total)
+                st.rerun()
+            except Exception as e:
+                st.session_state["last_run"][ex] = {"lines": [("err", f"Falha ao carregar/rodar testes: {e}")], "summary": (0, 0)}
+                st.rerun()
+
+    # Mostrar a última execução (persistida)
+    _lr = st.session_state["last_run"].get(ex)
+    if _lr:
+        for lvl, msg in _lr.get("lines", []):
+            if lvl == "ok":
+                st.success(msg)
+            elif lvl == "warn":
+                st.warning(msg)
+            else:
+                st.error(msg)
+        ok_lr, tot_lr = _lr.get("summary", (0,0))
+        st.info(f"*Resumo {ex.upper()}: {ok_lr}/{tot_lr} OK*")
 
 st.caption("As entradas e saídas dos testes não são exibidas. Este app apenas avalia localmente via casos de teste públicos.")
