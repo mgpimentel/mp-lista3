@@ -203,10 +203,24 @@ ex = st.selectbox("Exercício", ex_list, format_func=lambda k: k.upper())
 
 st.markdown(ENUNCIADOS[ex])
 
-# Editor com memória por exercício
-current_code = st.session_state["codes"].get(ex, TEMPLATES[ex])
-code = st.text_area("Seu código (use input() e print())", value=current_code, height=260, key=f"code_{ex}")
+# Mostra o modelo com highlight (não editável)
+st.markdown(f"""```python\n{TEMPLATES[ex]}\n```""")
+
+# Editor com memória por exercício (em branco inicialmente)
+current_code = st.session_state["codes"].get(ex, "")
+code = st.text_area(
+    "Seu código (use input() e print())",
+    value=current_code,
+    height=260,
+    key=f"code_{ex}",
+    placeholder=TEMPLATES[ex],
+)
 st.session_state["codes"][ex] = st.session_state[f"code_{ex}"]
+
+# Pré-visualização formatada do código (com highlight)
+st.markdown("**Pré-visualização do seu código:**")
+preview_code = st.session_state["codes"][ex] if st.session_state["codes"][ex].strip() else TEMPLATES[ex]
+st.code(preview_code, language="python")
 
 col1, col2 = st.columns([1,1])
 with col1:
