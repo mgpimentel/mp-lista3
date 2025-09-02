@@ -213,7 +213,7 @@ if ACE_OK:
     code = st_ace(
         value=current_code or "",
         language="python",
-        theme="monokai",           # tema com contraste forte
+        theme="github",           # tema com contraste forte
         keybinding="vscode",
         font_size=14,
         tab_size=4,
