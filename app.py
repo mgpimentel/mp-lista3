@@ -1,5 +1,6 @@
 import streamlit as st
 import io, sys, hashlib, builtins, requests, re, json, urllib.parse, hmac
+import pandas as _pd
 
 # =========================
 # Configurações do app
@@ -9,22 +10,6 @@ st.set_page_config(page_title="Lista 3 — Meninas Programadoras", layout="cente
 # -------------------------
 # Segredos (defina no secrets.toml ou nas Secrets do Streamlit Cloud)
 # -------------------------
-# Exemplos de secrets:
-# GITHUB_RAW_BASE="https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t"
-# SECRET_KEY="troque-por-uma-chave-secreta-bem-grande"
-# FORM_URL="https://docs.google.com/forms/d/e/SEU_FORM_ID/viewform"
-# [ENTRY_ID]
-# ident="entry.1111111111"
-# lista="entry.2222222222"
-# ex="entry.3333333333"
-# ok="entry.4444444444"
-# tot="entry.5555555555"
-# code="entry.6666666666"
-# sig="entry.7777777777"
-#
-# (Opcional) Para acessar repositório privado via raw.githubusercontent, forneça:
-# GITHUB_TOKEN="ghp_..."  (token com escopo apenas de leitura)
-
 GITHUB_RAW_BASE = st.secrets.get("GITHUB_RAW_BASE", "https://raw.githubusercontent.com/mgpimentel/xyzist3st3s/main/t")
 SECRET_KEY = st.secrets.get("SECRET_KEY", "troque-por-uma-chave-secreta")
 FORM_URL = st.secrets.get("FORM_URL", "https://docs.google.com/forms/d/e/SEU_FORM_ID/viewform")
@@ -45,7 +30,7 @@ LISTA_ID = "Lista 3"
 # Enunciados (versão MPM)
 # =========================
 ENUNCIADOS = {
-"ex1": "*EX1 — Dados o número de execicios que uma aluna resolveu nas duas primeiras listas, calcule quantos exercícios ela resolveu no total.*\n\n*Exemplo*\n\nVocê digita:\n```\n7\n8\n```\nO programa imprime:\n```\n15\n```",
+    "ex1": "*EX1 — Dados o número de execicios que uma aluna resolveu nas duas primeiras listas, calcule quantos exercícios ela resolveu no total.*\n\n*Exemplo*\n\nVocê digita:\n```\n7\n8\n```\nO programa imprime:\n```\n15\n```",
     "ex2": "*EX2 — Você está ajudando a professora do Fundamental a ensinar para as crianças que não se deve gastar mais do que se tem. Ela pediu para você fazer um programa no qual as crianças digitam o valor do saldo e o valor de um item, e o programa imprime 'pode comprar' se o saldo for maior ou igual ao valor do item, e 'não pode comprar' caso contrário.*\n\n*Exemplo*\n\nVocê digita:\n```\n100\n80\n```\nO programa imprime:\n```\npode comprar\n```",
     "ex3": "*EX3 — A professora do Fundamental ficou sabendo que você aprendeu a utilizar o operador `in` e logo pensou que você pode ajudar com um programa que, dada uma letra, verifica  se é uma das vogais. Ela disse que as crianças só sabem utilizar letras maíusculas e pediu para que seu programa responda 'vogal' ou 'não vogal'.*\n\n*Exemplo*\n\nVocê digita:\n```\nA\n```\nO programa imprime:\n```\nvogal\n```",
     "ex4": "*EX4 — Nosso curso *Meninas Programadoras Multidisciplinar* tem número limitado de vagas. As candidatas são analisadas por ordem de prioridade: (1) alunas do Ensino Médio, (2) concluintes no ano anterior, (3) há dois anos, (4) há três anos, e assim por diante. Seu programa deve, dado o número de vagas total, ler o número de alunas selecionadas por atenderem os critérios de priorização, aceitando alunas até que o número de vagas se esgote. No final, o programa informa quantos critérios foram utilizados na seleção da turma.*\n\n*Exemplo*\n\nVocê digita:\n```\n150\n50\n60\n30\n15\n```\nO programa imprime:\n```\n4\n```",
@@ -129,7 +114,7 @@ def load_tests_from_github(tag: str):
     raise last_err or RuntimeError("Não foi possível carregar os testes.")
 
 # =========================
-# Assinatura HMAC
+# Assinatura HMAC (não usada quando sem forms)
 # =========================
 def sign_submission(ident: str, lista: str, ex: str, ok: int, tot: int, code: str) -> str:
     payload = f"{ident}|{lista}|{ex}|{ok}|{tot}|{_sha256(code.strip())}"
@@ -149,48 +134,51 @@ def prefilled_form_url(ident: str, lista: str, ex: str, ok: int, tot: int, code:
     return f"{FORM_URL}?usp=pp_url&{urllib.parse.urlencode(params)}"
 
 # =========================
-# Memória por exercício + resultados + submissão
+# Memória por exercício + resultados (+submitted, se quiser manter coluna)
 # =========================
 if "codes" not in st.session_state:
     st.session_state["codes"] = {f"ex{i}": "" for i in range(1, 13)}
 if "results" not in st.session_state:
     st.session_state["results"] = {}  # ex -> (ok, total)
 if "submitted" not in st.session_state:
-    st.session_state["submitted"] = {}  # ex -> True/False
+    st.session_state["submitted"] = {}  # ex -> True/False (mantido só para dashboard)
 
 # =========================
-# Painel de Progresso
+# Painel de Progresso (função + placeholder)
 # =========================
-st.subheader("📊 Seu progresso na Lista 3")
-import pandas as _pd
-rows = []
-for i in range(1, 13):
-    k = f"ex{i}"
-    res = st.session_state["results"].get(k)
-    ok, tot = (res if res else (0, 0))
-    perc = (ok / tot * 100) if tot else 0.0
-    status = "— não avaliado —" if tot == 0 else ("✅ completo" if ok == tot else "🟡 parcial")
-    submitted = "✅" if st.session_state["submitted"].get(k) else "—"
-    rows.append({
-        "Exercício": k.upper(),
-        "Acertos": f"{ok}/{tot}" if tot else "",
-        "%": round(perc, 1) if tot else "",
-        "Status": status,
-        "Formulário": submitted,
-    })
-df = _pd.DataFrame(rows)
-df = df[["Exercício", "Acertos", "%", "Status", "Formulário"]]
-st.dataframe(df, hide_index=True, use_container_width=True)
-valid = [r for r in rows if r["%"] != ""]
-avg = sum(r["%"] for r in valid)/len(valid) if valid else 0.0
-st.progress(min(1.0, avg/100))
-st.caption(f"Progresso médio: {avg:.1f}% nos exercícios avaliados")
+def render_dashboard(target_placeholder):
+    rows = []
+    for i in range(1, 13):
+        k = f"ex{i}"
+        res = st.session_state["results"].get(k)
+        ok, tot = (res if res else (0, 0))
+        perc = (ok / tot * 100) if tot else 0.0
+        status = "— não avaliado —" if tot == 0 else ("✅ completo" if ok == tot else "🟡 parcial")
+        submitted = "✅" if st.session_state["submitted"].get(k) else "—"
+        rows.append({
+            "Exercício": k.upper(),
+            "Acertos": f"{ok}/{tot}" if tot else "",
+            "%": round(perc, 1) if tot else "",
+            "Status": status,
+            "Formulário": submitted,
+        })
+    df = _pd.DataFrame(rows)[["Exercício", "Acertos", "%", "Status", "Formulário"]]
+    with target_placeholder.container():
+        st.subheader("📊 Seu progresso na Lista 3")
+        st.dataframe(df, hide_index=True, use_container_width=True)
+        valid = [r for r in rows if r["%"] != ""]
+        avg = sum(r["%"] for r in valid)/len(valid) if valid else 0.0
+        st.progress(min(1.0, avg/100))
+        st.caption(f"Progresso médio: {avg:.1f}% nos exercícios avaliados")
+
+dash = st.empty()
+render_dashboard(dash)
 
 # =========================
 # UI principal
 # =========================
 st.title("Lista 3 — Correção Automática (MP)")
-st.markdown("Selecione o exercício, escreva seu código, rode os testes e *envie sua resposta* pelo formulário.")
+st.markdown("Selecione o exercício, escreva seu código e rode os testes.")
 
 ex_list = [f"ex{i}" for i in range(1,13)]
 ex = st.selectbox("Exercício", ex_list, format_func=lambda k: k.upper())
@@ -213,7 +201,7 @@ if ACE_OK:
     code = st_ace(
         value=current_code or "",
         language="python",
-        theme="github",           # tema com contraste forte
+        theme="chrome",           # << tema solicitado
         keybinding="vscode",
         font_size=14,
         tab_size=4,
@@ -246,6 +234,7 @@ with col2:
 
 if reset:
     st.session_state["results"].pop(ex, None)
+    render_dashboard(dash)
 
 if rodar:
     with st.spinner("Carregando casos e executando testes..."):
@@ -272,26 +261,7 @@ if rodar:
                         st.warning(f"Teste {i}: ERRO")
             st.info(f"*Resumo {ex.upper()}: {ok}/{total} OK*")
             st.session_state["results"][ex] = (ok, total)
+            # Atualiza o painel imediatamente
+            render_dashboard(dash)
         except Exception as e:
             st.error(f"Falha ao carregar/rodar testes: {e}")
-
-# st.divider()
-# st.subheader("Enviar este exercício")
-
-# ident = st.text_input("Identificador (RA/USP ou e-mail)", "")
-# res = st.session_state["results"].get(ex)
-# disabled = res is None or not ident.strip()
-
-# if st.button("Gerar formulário pré-preenchido", disabled=disabled):
-#     if not res:
-#         st.warning("Rode a avaliação antes de enviar.")
-#     elif not ident.strip():
-#         st.warning("Preencha o identificador.")
-#     else:
-#         ok, tot = res
-#         code_sent = st.session_state["codes"][ex]
-#         url = prefilled_form_url(ident.strip(), LISTA_ID, ex.upper(), ok, tot, code_sent)
-#         st.link_button("Abrir Google Form pré-preenchido", url)
-#         st.session_state["submitted"][ex] = True
-
-# st.caption("As entradas e saídas dos testes não são exibidas. O formulário registra seu código, placar e uma assinatura para verificação.")
