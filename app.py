@@ -15,7 +15,7 @@ SECRET_KEY = st.secrets.get("SECRET_KEY", "troque-por-uma-chave-secreta")
 FORM_URL = st.secrets.get("FORM_URL", "https://docs.google.com/forms/d/e/SEU_FORM_ID/viewform")
 ENTRY_ID = st.secrets.get("ENTRY_ID", {
     "ident": "entry.11111111111",
-    "lista": "entry.2222222222",
+    "lista": "entry.22222222222",
     "ex":    "entry.3333333333",
     "ok":    "entry.4444444444",
     "tot":   "entry.5555555555",
