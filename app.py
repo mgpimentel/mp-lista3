@@ -2,6 +2,42 @@ import streamlit as st
 import io, sys, hashlib, builtins, requests, re, json, urllib.parse, hmac
 import pandas as _pd
 
+# --- Execução isolada com timeout (1 processo por caso) ---
+TIME_LIMIT_SEC = float(st.secrets.get("TIME_LIMIT_SEC", 2.0))   # ajuste via secrets se quiser
+OUTPUT_LIMIT   = int(st.secrets.get("OUTPUT_LIMIT", 10000))     # corta saídas gigantes
+
+# Em Windows/local, garantir 'spawn' evita problemas com multiprocessing
+try:
+    import multiprocessing as _mp
+    _mp.set_start_method("spawn", force=True)
+except Exception:
+    pass
+
+def _worker_exec(code: str, input_text: str, queue):
+    """Roda o código do aluno em processo separado e devolve (status, texto)."""
+    import io, sys, builtins
+    lines = (input_text or "").splitlines(True)
+    it = iter(lines)
+    def fake_input(prompt=""):
+        try:
+            return next(it).rstrip("\n")
+        except StopIteration:
+            raise EOFError("faltou entrada para input()")
+    old_stdin, old_stdout = sys.stdin, sys.stdout
+    old_input = builtins.input
+    sys.stdin = io.StringIO(input_text or "")
+    sys.stdout = io.StringIO()
+    builtins.input = fake_input
+    try:
+        exec(code or "", {})
+        out = sys.stdout.getvalue()
+        queue.put(("ok", out))
+    except Exception as e:
+        queue.put(("exc", f"{type(e).__name__}: {e}"))
+    finally:
+        sys.stdin, sys.stdout = old_stdin, old_stdout
+        builtins.input = old_input
+
 # =========================
 # Configurações do app
 # =========================
@@ -60,27 +96,27 @@ def _normalize(s: str, mode: str = "strip") -> str:
         return s.lstrip()
     return s
 
-def run_user_code(code: str, input_text: str):
-    lines = input_text.splitlines(True)
-    it = iter(lines)
-    def fake_input(prompt=""):
-        try:
-            return next(it).rstrip("\n")
-        except StopIteration:
-            raise EOFError("faltou entrada para input()")
-    old_stdin, old_stdout = sys.stdin, sys.stdout
-    old_input = builtins.input
-    sys.stdin = io.StringIO(input_text)
-    sys.stdout = io.StringIO()
-    builtins.input = fake_input
+def run_user_code(code: str, input_text: str, time_limit: float = TIME_LIMIT_SEC, output_limit: int = OUTPUT_LIMIT):
+    import multiprocessing as mp
+    q = mp.Queue()
+    p = mp.Process(target=_worker_exec, args=(code, input_text, q))
+    p.start()
+    p.join(time_limit)
+
+    if p.is_alive():
+        p.terminate()   # corta loop infinito
+        p.join(0.1)
+        return "timeout", "Tempo esgotado (possível loop infinito)"
+
     try:
-        exec(code, {})
-        return "ok", sys.stdout.getvalue()
-    except Exception as e:
-        return "exc", f"{type(e).__name__}: {e}"
-    finally:
-        sys.stdin, sys.stdout = old_stdin, old_stdout
-        builtins.input = old_input
+        status, out = q.get_nowait()
+    except Exception:
+        status, out = ("exc", "Sem saída (erro desconhecido)")
+
+    if isinstance(out, str) and len(out) > output_limit:
+        out = out[:output_limit] + "\n... (truncado)"
+    return status, out
+
 
 # =========================
 # Carregar testes
