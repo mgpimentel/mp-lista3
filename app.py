@@ -82,26 +82,177 @@ GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 LISTA_ID = "Lista 1"
 
 # =========================
-# Enunciados (EXATOS da Lista 1 que você forneceu)
+# Enunciados built-in (multilinha) — usados só como fallback
 # =========================
-ENUNCIADOS = {
-  "ex1": "*EX1 — Fila com senha #1.*\\n\\nDado o número que está no painel, informe qual é o próximo número a ser chamado.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n7\\n```\\nO programa imprime:\\n```\\n8\\n```",
-  "ex2": "*EX2 — Fila com senha #2.*\\n\\nDado o número do seu papel de senha, informe qual número estará no painel imediatamente antes da sua vez.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n42\\n```\\nO programa imprime:\\n```\\n41\\n```",
-  "ex3": "*EX3 — Fila com senha #3.*\\n\\nDado o seu número de senha e o número atualmente no painel (nessa ordem), informe quantas pessoas faltam para chegar a sua vez.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n50\\n45\\n```\\nO programa imprime:\\n```\\n5\\n```",
-  "ex4": "*EX4 — Vacinação em dobro.*\\n\\nEm uma campanha especial, cada pessoa recebe duas doses no mesmo dia. Dado o número de pessoas atendidas, informe o total de doses aplicadas.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n5\\n```\\nO programa imprime:\\n```\\n10\\n```",
-  "ex5": "*EX5 — Vacinação da semana.*\\n\\nInforme o total de vacinas aplicadas somando os 7 valores (um por linha) correspondentes aos dias de uma semana.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n10\\n0\\n5\\n5\\n0\\n0\\n2\\n```\\nO programa imprime:\\n```\\n22\\n```",
-  "ex6": "*EX6 — Presente?*\\n\\nVocê está conferindo presença em uma chamada. Cada linha contém *P* (presente) ou *A* (ausente). A sequência termina com um ponto final `.`.\\n\\nInforme quantas presenças foram registradas.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\nP\\nA\\nP\\nP\\n.\\n```\\nO programa imprime:\\n```\\n3\\n```",
-  "ex7": "*EX7 — Calculadora particular.*\\n\\nDados dois valores (um por linha), imprima quatro linhas na ordem: soma, diferença (primeiro menos segundo), produto e quociente (primeiro dividido pelo segundo). Use duas casas decimais.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n5\\n2\\n```\\nO programa imprime:\\n```\\n7.00\\n3.00\\n10.00\\n2.50\\n```",
-  "ex8": "*EX8 — Feliz Aniversário!*\\n\\nDado um nome (uma linha), imprima a mensagem: `Feliz aniversário, NOME!`\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\nMaria\\n```\\nO programa imprime:\\n```\\nFeliz aniversário, Maria!\\n```",
-  "ex9": "*EX9 — Chego em 91 minutos...*\\n\\nDada uma hora no formato `HH:MM` (24h), informe o horário que será 91 minutos depois.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n13:00\\n```\\nO programa imprime:\\n```\\n14:31\\n```",
-  "ex10": "*EX10 — Dados para uma compra consciente.*\\n\\nDadas duas linhas, o *saldo disponível* e o *preço de um item*, informe o valor restante caso a compra seja realizada. Use duas casas decimais.\\n\\n*Exemplo*\\n\\nVocê digita:\\n```\\n100\\n80\\n```\\nO programa imprime:\\n```\\n20.00\\n```"
+ENUNCIADOS_BUILTIN = {
+  "ex1": """*EX1 — Fila com senha #1.*
+
+Dado o número que está no painel, informe qual é o próximo número a ser chamado.
+
+*Exemplo*
+
+Você digita:
+```
+7
+```
+O programa imprime:
+```
+8
+```""",
+  "ex2": """*EX2 — Fila com senha #2.*
+
+Dado o número do seu papel de senha, informe qual número estará no painel imediatamente antes da sua vez.
+
+*Exemplo*
+
+Você digita:
+```
+42
+```
+O programa imprime:
+```
+41
+```""",
+  "ex3": """*EX3 — Fila com senha #3.*
+
+Dado o seu número de senha e o número atualmente no painel (nessa ordem), informe quantas pessoas faltam para chegar a sua vez.
+
+*Exemplo*
+
+Você digita:
+```
+50
+45
+```
+O programa imprime:
+```
+5
+```""",
+  "ex4": """*EX4 — Vacinação em dobro.*
+
+Em uma campanha especial, cada pessoa recebe duas doses no mesmo dia. Dado o número de pessoas atendidas, informe o total de doses aplicadas.
+
+*Exemplo*
+
+Você digita:
+```
+5
+```
+O programa imprime:
+```
+10
+```""",
+  "ex5": """*EX5 — Vacinação da semana.*
+
+Informe o total de vacinas aplicadas somando os 7 valores (um por linha) correspondentes aos dias de uma semana.
+
+*Exemplo*
+
+Você digita:
+```
+10
+0
+5
+5
+0
+0
+2
+```
+O programa imprime:
+```
+22
+```""",
+  "ex6": """*EX6 — Presente?*
+
+Você está conferindo presença em uma chamada. Cada linha contém *P* (presente) ou *A* (ausente). A sequência termina com um ponto final `.`.
+
+Informe quantas presenças foram registradas.
+
+*Exemplo*
+
+Você digita:
+```
+P
+A
+P
+P
+.
+```
+O programa imprime:
+```
+3
+```""",
+  "ex7": """*EX7 — Calculadora particular.*
+
+Dados dois valores (um por linha), imprima quatro linhas na ordem: soma, diferença (primeiro menos segundo), produto e quociente (primeiro dividido pelo segundo). Use duas casas decimais.
+
+*Exemplo*
+
+Você digita:
+```
+5
+2
+```
+O programa imprime:
+```
+7.00
+3.00
+10.00
+2.50
+```""",
+  "ex8": """*EX8 — Feliz Aniversário!*
+
+Dado um nome (uma linha), imprima a mensagem: `Feliz aniversário, NOME!`
+
+*Exemplo*
+
+Você digita:
+```
+Maria
+```
+O programa imprime:
+```
+Feliz aniversário, Maria!
+```""",
+  "ex9": """*EX9 — Chego em 91 minutos...*
+
+Dada uma hora no formato `HH:MM` (24h), informe o horário que será 91 minutos depois.
+
+*Exemplo*
+
+Você digita:
+```
+13:00
+```
+O programa imprime:
+```
+14:31
+```""",
+  "ex10": """*EX10 — Dados para uma compra consciente.*
+
+Dadas duas linhas, o *saldo disponível* e o *preço de um item*, informe o valor restante caso a compra seja realizada. Use duas casas decimais.
+
+*Exemplo*
+
+Você digita:
+```
+100
+80
+```
+O programa imprime:
+```
+20.00
+```""",
 }
 
+# =========================
+# Utilitários
+# =========================
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 def _normalize(s: str, mode: str = "strip") -> str:
-    s = s.replace("\\r\\n", "\\n").replace("\\r", "\\n")
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
     if mode == "strip":
         return s.strip()
     if mode == "rstrip":
@@ -111,8 +262,25 @@ def _normalize(s: str, mode: str = "strip") -> str:
     return s
 
 @st.cache_data(show_spinner=False, ttl=600)
+def fetch_enunciados():
+    url = f"{GITHUB_RAW_BASE}/enunciados.json"
+    headers = {}
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"token {GITHUB_TOKEN}"
+        headers["Accept"] = "application/vnd.github.raw+json"
+    try:
+        r = requests.get(url, timeout=15, headers=headers or None)
+        if r.status_code == 200:
+            data = r.json()
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+@st.cache_data(show_spinner=False, ttl=600)
 def load_tests_from_github(tag: str):
-    m = re.search(r'(\\d+)', str(tag))
+    m = re.search(r'(\d+)', str(tag))
     n = m.group(1) if m else str(tag)
     urls = [
         f"{GITHUB_RAW_BASE}/ex{n}.json",
@@ -129,23 +297,22 @@ def load_tests_from_github(tag: str):
             r.raise_for_status()
             data = r.json()
             cases = data.get("cases", data if isinstance(data, list) else [])
-            return {
-                "cases": cases,
-                "hash_alg": data.get("hash_alg", "sha256"),
-                "normalizacao": data.get("normalizacao", "strip")
-            }
+            return {"cases": cases, "hash_alg": data.get("hash_alg", "sha256"), "normalizacao": data.get("normalizacao", "strip")}
         except Exception as e:
             last_err = e
     raise last_err or RuntimeError("Não foi possível carregar os testes.")
 
 # =========================
-# UI e lógica
+# Estado da UI
 # =========================
 if "codes" not in st.session_state:
     st.session_state["codes"] = {f"ex{i}": "" for i in range(1, 11)}
 if "results" not in st.session_state:
     st.session_state["results"] = {}
 
+# =========================
+# Painel
+# =========================
 def render_dashboard(target_placeholder):
     rows = []
     for i in range(1, 11):
@@ -166,12 +333,19 @@ def render_dashboard(target_placeholder):
 dash = st.empty()
 render_dashboard(dash)
 
+# =========================
+# UI principal
+# =========================
 st.title("Lista 1 — Pré-correção Automática (MPM.PPM.T2)")
 st.markdown("Selecione o exercício, escreva seu código e rode os testes.")
 
 ex_list = [f"ex{i}" for i in range(1, 11)]
 ex = st.selectbox("Exercício", ex_list, format_func=lambda k: k.upper())
-st.markdown(ENUNCIADOS[ex])
+
+# Usa enunciados do Git (se existir), senão fallback built-in
+_enuns_remote = fetch_enunciados()
+_enun_text = _enuns_remote.get(ex) or ENUNCIADOS_BUILTIN.get(ex, "(sem enunciado)")
+st.markdown(_enun_text)
 
 ACE_OK = False
 try:
