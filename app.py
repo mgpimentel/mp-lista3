@@ -3,7 +3,7 @@ import io, sys, hashlib, builtins, requests, re, json, urllib.parse, hmac
 import pandas as _pd
 
 # Timeout e limite de saída
-TIME_LIMIT_SEC = float(st.secrets.get("TIME_LIMIT_SEC", 2.0))
+TIME_LIMIT_SEC = float(st.secrets.get("TIME_LIMIT_SEC", 5.0))
 OUTPUT_LIMIT   = int(st.secrets.get("OUTPUT_LIMIT", 10000))
 
 import multiprocessing as _mp
