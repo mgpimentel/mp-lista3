@@ -2,6 +2,33 @@ import streamlit as st
 import io, sys, hashlib, builtins, requests, re, json, urllib.parse, hmac
 import pandas as _pd
 
+# Timeout e limite de saída
+TIME_LIMIT_SEC = float(st.secrets.get("TIME_LIMIT_SEC", 2.0))
+OUTPUT_LIMIT   = int(st.secrets.get("OUTPUT_LIMIT", 10000))
+
+import multiprocessing as _mp
+try:
+    _mp.set_start_method("spawn", force=True)  # evita travas no Windows/Cloud
+except Exception:
+    pass
+
+def _worker_exec(code: str, input_text: str, queue):
+    import io, sys, builtins
+    it = iter((input_text or "").splitlines(True))
+    def fake_input(_=""):
+        import builtins
+        try: return next(it).rstrip("\n")
+        except StopIteration: raise EOFError("faltou entrada para input()")
+    old_in, old_out, old_input = sys.stdin, sys.stdout, builtins.input
+    sys.stdin, sys.stdout, builtins.input = io.StringIO(input_text or ""), io.StringIO(), fake_input
+    try:
+        exec(code or "", {})
+        queue.put(("ok", sys.stdout.getvalue()))
+    except Exception as e:
+        queue.put(("exc", f"{type(e).__name__}: {e}"))
+    finally:
+        sys.stdin, sys.stdout, builtins.input = old_in, old_out, old_input
+
 # =========================
 # Configurações do app
 # =========================
@@ -60,27 +87,20 @@ def _normalize(s: str, mode: str = "strip") -> str:
         return s.lstrip()
     return s
 
-def run_user_code(code: str, input_text: str):
-    lines = input_text.splitlines(True)
-    it = iter(lines)
-    def fake_input(prompt=""):
-        try:
-            return next(it).rstrip("\n")
-        except StopIteration:
-            raise EOFError("faltou entrada para input()")
-    old_stdin, old_stdout = sys.stdin, sys.stdout
-    old_input = builtins.input
-    sys.stdin = io.StringIO(input_text)
-    sys.stdout = io.StringIO()
-    builtins.input = fake_input
+def run_user_code(code: str, input_text: str, time_limit: float = TIME_LIMIT_SEC, output_limit: int = OUTPUT_LIMIT):
+    q = _mp.Queue()
+    p = _mp.Process(target=_worker_exec, args=(code, input_text, q))
+    p.start(); p.join(time_limit)
+    if p.is_alive():
+        p.terminate(); p.join(0.1)
+        return "timeout", "Tempo esgotado (possível loop infinito)"
     try:
-        exec(code, {})
-        return "ok", sys.stdout.getvalue()
-    except Exception as e:
-        return "exc", f"{type(e).__name__}: {e}"
-    finally:
-        sys.stdin, sys.stdout = old_stdin, old_stdout
-        builtins.input = old_input
+        status, out = q.get_nowait()
+    except Exception:
+        status, out = ("exc", "Sem saída (erro desconhecido)")
+    if isinstance(out, str) and len(out) > output_limit:
+        out = out[:output_limit] + "\n... (truncado)"
+    return status, out
 
 # =========================
 # Carregar testes
@@ -263,6 +283,8 @@ if rodar:
                 normalizacao = caso.get("normalizacao", bundle.get("normalizacao", "strip"))
                 status, out = run_user_code(code_to_run, entrada)
                 if status == "exc":
+                    st.error(f"Teste {i}: ERRO — {out}")
+                elif status == "timeout":
                     st.error(f"Teste {i}: ERRO — {out}")
                 else:
                     out_norm = _normalize(out, normalizacao)
